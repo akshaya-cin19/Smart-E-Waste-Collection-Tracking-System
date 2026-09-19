@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReCircuit — Smart E-Waste Collection & Tracking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+        <rect x="3" y="3" width="26" height="26" rx="3" stroke="#CB8552" stroke-width="1.6"/>
+        <circle cx="10" cy="10" r="2.1" fill="#5FBE8C"/>
+        <circle cx="22" cy="10" r="2.1" fill="#5FBE8C"/>
+        <circle cx="16" cy="22" r="2.1" fill="#CB8552"/>
+        <path d="M10 12.1V16.5H16V19.9" stroke="#5FBE8C" stroke-width="1.4" fill="none"/>
+        <path d="M22 12.1V16.5H16" stroke="#5FBE8C" stroke-width="1.4" fill="none"/>
+      </svg>
+      <div>
+        <div class="brand-name">ReCircuit</div>
+        <div class="brand-tag">E-WASTE TRACKING NETWORK</div>
+      </div>
+    </div>
+    <nav class="tabs" id="nav"></nav>
+    <div class="sidebar-foot">
+      <div class="role-switch">
+        <button class="role-btn active" data-role="citizen" onclick="setRole('citizen')">CITIZEN</button>
+        <button class="role-btn" data-role="collector" onclick="setRole('collector')">COLLECTOR</button>
+      </div>
+      <div class="sync-note"><span class="sync-dot"></span>Synced to this browser · local session</div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section class="page" id="page-dashboard">
+      <div class="page-head">
+        <div>
+          <h1>Network overview</h1>
+          <div class="page-sub">Live status of every pickup moving through the ReCircuit collection network.</div>
+        </div>
+        <button class="btn" onclick="go('request')">+ New pickup request</button>
+      </div>
+
+      <div class="stat-row" id="stat-row"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">RECENT ACTIVITY</div>
+          <table>
+            <thead><tr><th>Tracking ID</th><th>Item</th><th>Status</th><th>Updated</th></tr></thead>
+            <tbody id="dash-activity"></tbody>
+          </table>
+          <div class="empty" id="dash-empty" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 12h16M4 6h16M4 18h10"/></svg>
+            No pickups yet. Submit your first request to see it tracked here.
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">MATERIAL RECOVERED (EST.)</div>
+          <div id="dash-material"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEW REQUEST -->
+    <section class="page" id="page-request">
+      <div class="page-head">
+        <div>
+          <h1>Schedule a pickup</h1>
+          <div class="page-sub">Tell us what you're retiring — we'll assign the nearest collection center and issue a tracking ID.</div>
+        </div>
+      </div>
+      <div class="panel" style="max-width:560px;">
+        <div class="form-grid">
+          <div>
+            <label for="f-name">Full name</label>
+            <input id="f-name" placeholder="e.g. Ananya Rao">
+          </div>
+          <div>
+            <label for="f-phone">Phone number</label>
+            <input id="f-phone" placeholder="10-digit mobile number">
+          </div>
+        </div>
+        <div class="form-grid">
+          <div>
+            <label for="f-item">Item category</label>
+            <select id="f-item">
+              <option>Laptop / Computer</option>
+              <option>Mobile phone</option>
+              <option>Battery (Li-ion)</option>
+              <option>Television / Monitor</option>
+              <option>Printer / Peripherals</option>
+              <option>Large appliance</option>
+              <option>Mixed cables & accessories</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-qty">Quantity</label>
+            <input id="f-qty" type="number" min="1" value="1">
+          </div>
+        </div>
+        <label for="f-address">Pickup address</label>
+        <textarea id="f-address" placeholder="House / street, area, city, PIN code"></textarea>
+        <div class="form-grid">
+          <div>
+            <label for="f-date">Preferred pickup date</label>
+            <input id="f-date" type="date">
+          </div>
+          <div>
+            <label for="f-center">Assign nearest center</label>
+            <select id="f-center"></select>
+          </div>
+        </div>
+        <div style="margin-top:18px; display:flex; gap:10px;">
+          <button class="btn" onclick="submitRequest()">Submit request</button>
+          <button class="btn ghost" onclick="fillSample()">Fill sample data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRACK -->
+    <section class="page" id="page-track">
+      <div class="page-head">
+        <div>
+          <h1>Track a pickup</h1>
+          <div class="page-sub">Enter a tracking ID, or pick from your recent requests below.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="track-input-row">
+          <input id="track-input" placeholder="e.g. RC-4XJ29K" class="mono">
+          <button class="btn" onclick="trackById()">Track</button>
+        </div>
+      </div>
+      <div class="panel" id="track-result" style="display:none;"></div>
+      <div class="panel">
+        <div class="panel-title">ALL REQUESTS</div>
+        <table>
+          <thead><tr><th>Tracking ID</th><th>Requester</th><th>Item</th><th>Status</th><th></th></tr></thead>
+          <tbody id="track-list"></tbody>
+        </table>
+        <div class="empty" id="track-empty" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          Nothing to track yet.
+        </div>
+      </div>
+    </section>
+
+    <!-- COLLECTOR QUEUE -->
+    <section class="page" id="page-queue">
+      <div class="page-head">
+        <div>
+          <h1>Collector queue</h1>
+          <div class="page-sub">Move pickups through the pipeline as they're actioned on the ground.</div>
+        </div>
+      </div>
+      <div class="panel">
+        <table>
+          <thead><tr><th>Tracking ID</th><th>Item</th><th>Center</th><th>Status</th><th style="width:170px;">Advance</th></tr></thead>
+          <tbody id="queue-list"></tbody>
+        </table>
+        <div class="empty" id="queue-empty" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Queue is empty — no pickups awaiting action.
+        </div>
+      </div>
+    </section>
+
+    <!-- CENTERS -->
+    <section class="page" id="page-centers">
+      <div class="page-head">
+        <div>
+          <h1>Collection centers</h1>
+          <div class="page-sub">Certified drop-off and processing points across the network.</div>
+        </div>
+      </div>
+      <div class="panel" id="centers-list"></div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="page" id="page-analytics">
+      <div class="page-head">
+        <div>
+          <h1>Analytics</h1>
+          <div class="page-sub">How e-waste is moving through the network, by category and stage.</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-title">PICKUPS BY CATEGORY</div>
+          <div id="chart-category"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">PIPELINE STAGE</div>
+          <div id="chart-stage"></div>
+        </div>
+      </div>
+      <div class="footer-note">
+        Recovery estimates use average material-yield factors per device category (indicative, not measured). This prototype runs entirely in your browser — data is stored locally and isn't shared with other visitors. A production build would sync every request to a central database so citizens, collectors and municipal admins see the same live state.
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="modal-backdrop" onclick="if(event.target===this) closeModal()">
+  <div class="modal" id="modal-body"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
